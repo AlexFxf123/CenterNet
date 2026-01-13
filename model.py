@@ -120,7 +120,7 @@ class CenterNet(nn.Module):
         scale = np.array([[[512,512,512,512]]])
         scale_t = t.tensor(scale.copy(),device=txtytwth_pred.device).float()
         print('test float32', scale_t)
-        scale_t = t.tensor(scale.copy(),device=txtytwth_pred.device).float16()
+        scale_t = t.tensor(scale.copy(),device=txtytwth_pred.device).to(t.float16)
         print('test float16', scale_t)
         bbox_pred = t.clamp((self.decode(txtytwth_pred)/scale_t)[0],0.,1.)
  

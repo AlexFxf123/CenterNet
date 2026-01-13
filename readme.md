@@ -1,6 +1,6 @@
 # CenterNet：目标检测
  
-这是本书第十三章目标检测的配套代码。
+参考第十三章目标检测的配套代码。
  
 ## 1 环境准备
  
@@ -25,14 +25,12 @@
 - 训练
 ```bash
 # 训练，使用GPU
-python main.py train --gpu --batch-size=32
+train_set = true python ./main.py
 ```
  
 - 测试
 ```bash
 # 测试，使用GPU
-python main.py test --gpu=True --model-path='./checkpoints/centernet_final.pth' --test-img-path='test_img/' --test-save-path='test_result/'
+train_set = false python ./main.py
 ```
  
-部分目标检测的结果：
-![imgs](imgs/test_237864.png)

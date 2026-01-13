@@ -39,13 +39,13 @@ class Config(object):
     # data_path = './coco/minicoco/'            # 数据集存放路径，部分数据
     num_workers = 8                             # 多进程加载数据所用的进程数4，改为更多
     batch_size = 32
-    max_epoch = 25                              # 减少训练循环，如果效果好则需要100以上
+    max_epoch = 10                              # 减少训练循环，如果效果好则需要100以上
     num_classes = 80
     topk = 100
     lr = 1e-3                                   # 学习率
     gpu = True                                  # 是否使用GPU
-    model_path = None                           # 使用默认参数
-    # model_path = './checkpoints/centernet_3.pth'                       # 使用之前模型参数继续训练
+    # model_path = None                           # 使用默认参数
+    model_path = './pretrained_model/centernet_pre.pth'                       # 使用之前模型参数继续训练
  
     vis = False  # 是否使用visdom可视化，False表示不使用
     env = 'objdet'  # visdom的env
@@ -56,7 +56,7 @@ class Config(object):
  
     # 测试时所用参数
     test_img_path = 'test_img/'  # 待测试图片保存路径
-    test_save_path = 'test_result/'
+    test_save_path = 'test_results/'
  
 
  
@@ -111,8 +111,7 @@ def train():
         print('loss mean: ', loss_meter.mean)
         # print('test epoch: ready to save model pth')
         if (epoch+1)%opt.save_every == 0:
-            # t.save(model.state_dict(),'checkpoints/centernet_%s.pth'% str(epoch+1))
-            t.save(model.state_dict(),'checkpoints/centernet_%s.pth'% str(epoch+1))
+            t.save(model.state_dict(),'checkpoints/centernet_%s.pth'% str(epoch+1))     # 通常仅保留参数
 
     # 绘制曲线图
     if len(loss_values) == opt.max_epoch:
@@ -125,11 +124,9 @@ def train():
         plt.show()
 
 @t.no_grad()
-def test(**kwargs):
+def test():
+
     opt = Config()
- 
-    for k_, v_ in kwargs.items():
-        setattr(opt, k_, v_)
     device=t.device('cuda') if opt.gpu else t.device('cpu')
     
     # 加载模型
@@ -161,4 +158,9 @@ if __name__ == '__main__':
     # 测试
     # print('test',t.cuda.is_available())
     # print(t.version.cuda)
-    train()
+
+    train_set = True
+    if train_set == True:
+        train()
+    else:
+        test()

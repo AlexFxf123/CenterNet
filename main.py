@@ -1,15 +1,14 @@
 # coding:utf8
 import os
-import ipdb
 import torch as t
-import torchvision as tv
 import tqdm
-from model import Model
+from model import CenterNet
 from torch.utils.data import DataLoader
 from dataset import COCODataset,Augmentation
 from utils import *
 from torchnet.meter import AverageValueMeter
 import cv2
+import matplotlib.pyplot as plt
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"        # 指定cuda的GPU编号，电脑只有1块GPU，编号为0
 
  
@@ -36,18 +35,20 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
  
 class Config(object):
-    data_path = './coco/minicoco/'  # 数据集存放路径
-    num_workers = 8  # 多进程加载数据所用的进程数4，改为更多
+    data_path = './coco/data/'                  # 数据集存放路径，完整数据
+    # data_path = './coco/minicoco/'            # 数据集存放路径，部分数据
+    num_workers = 8                             # 多进程加载数据所用的进程数4，改为更多
     batch_size = 32
-    max_epoch = 10         # 减少训练循环，如果效果好则需要100以上
+    max_epoch = 25                              # 减少训练循环，如果效果好则需要100以上
     num_classes = 80
     topk = 100
-    lr = 1e-3  # 学习率
-    gpu = True  # 是否使用GPU
-    model_path = None
+    lr = 1e-3                                   # 学习率
+    gpu = True                                  # 是否使用GPU
+    model_path = None                           # 使用默认参数
+    # model_path = './checkpoints/centernet_3.pth'                       # 使用之前模型参数继续训练
  
     vis = False  # 是否使用visdom可视化，False表示不使用
-    env = 'CenterNet'  # visdom的env
+    env = 'objdet'  # visdom的env
     plot_every = 100  # 每间隔20 batch，visdom画图一次
  
     debug_file = '/tmp/debugcenternet'  # 存在该文件则进入debug模式
@@ -57,12 +58,10 @@ class Config(object):
     test_img_path = 'test_img/'  # 待测试图片保存路径
     test_save_path = 'test_result/'
  
-opt = Config()
+
  
- 
-def train(**kwargs):
-    for k_, v_ in kwargs.items():
-        setattr(opt, k_, v_)
+def train():
+    opt = Config()
  
     device=t.device('cuda') if opt.gpu else t.device('cpu')
     if opt.vis:
@@ -73,7 +72,7 @@ def train(**kwargs):
     dataloader = DataLoader(dataset, opt.batch_size,shuffle=True,collate_fn=detection_collate,num_workers=opt.num_workers)
  
     # 网络
-    model = Model(num_classes=opt.num_classes,topk=opt.topk)
+    model = CenterNet(num_classes=opt.num_classes,topk=opt.topk)
     map_location = lambda storage, loc: storage
     if opt.model_path:
         model.load_state_dict(t.load(opt.model_path, map_location=map_location))
@@ -84,7 +83,7 @@ def train(**kwargs):
     optimizer = t.optim.Adam(model.parameters(), opt.lr)
  
     loss_meter = AverageValueMeter()
- 
+    loss_values = []
     for epoch in range(opt.max_epoch):
         loss_meter.reset()
         print('test epoch: epoch = ', epoch)
@@ -101,19 +100,30 @@ def train(**kwargs):
             optimizer.step()
             loss_meter.add(total_loss.item())
             
-            if (ii+1) % opt.plot_every == 0:
-                if os.path.exists(opt.debug_file):
-                    ipdb.set_trace()
-                if opt.vis:
-                    vis.plot('total_loss',loss_meter.value()[0])
+            # if (ii+1) % opt.plot_every == 0:
+            #     if os.path.exists(opt.debug_file):
+            #         ipdb.set_trace()
+            #     if opt.vis:
+            #         vis.plot('total_loss',loss_meter.value()[0])
         if opt.vis:
             vis.save([opt.env])
-        
-        print('test epoch: ready to save model pth')
+        loss_values.append(loss_meter.mean)
+        print('loss mean: ', loss_meter.mean)
+        # print('test epoch: ready to save model pth')
         if (epoch+1)%opt.save_every == 0:
             # t.save(model.state_dict(),'checkpoints/centernet_%s.pth'% str(epoch+1))
-            t.save(model,'checkpoints/centernet_%s.pth'% str(epoch+1))
- 
+            t.save(model.state_dict(),'checkpoints/centernet_%s.pth'% str(epoch+1))
+
+    # 绘制曲线图
+    if len(loss_values) == opt.max_epoch:
+        plt.figure(figsize=(12, 6))
+        plt.plot(range(1, opt.max_epoch + 1), loss_values, label='Training Loss',color='blue', marker='o')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Training Loss')
+        plt.legend()
+        plt.show()
+
 @t.no_grad()
 def test(**kwargs):
     opt = Config()
@@ -123,7 +133,7 @@ def test(**kwargs):
     device=t.device('cuda') if opt.gpu else t.device('cpu')
     
     # 加载模型
-    model = Model(num_classes=opt.num_classes,topk=opt.topk).eval()
+    model = CenterNet(num_classes=opt.num_classes,topk=opt.topk).eval()
     model.load_state_dict(t.load(opt.model_path, map_location=lambda _s, _: _s))
     model.to(device)
     transform = Augmentation()
@@ -151,6 +161,4 @@ if __name__ == '__main__':
     # 测试
     # print('test',t.cuda.is_available())
     # print(t.version.cuda)
-
-    import fire
-    fire.Fire()
+    train()

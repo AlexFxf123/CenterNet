@@ -38,12 +38,12 @@ class SPP(nn.Module):
         x_3 = nn.functional.max_pool2d(x, 13, stride=1, padding=6)
         return t.cat([x,x_1,x_2,x_3],dim=1)
  
-class Model(nn.Module):
+class CenterNet(nn.Module):
     def __init__(self,num_classes,topk):
-        super(Model, self).__init__()
+        super(CenterNet, self).__init__()
         self.num_classes = num_classes
         self.topk = topk
-        self.backbone = resnet18(weights=resnet18.ResNet18_Weights.DEFAULT)
+        self.backbone = resnet18(weights=None)
         self.backbone=nn.Sequential(*list(self.backbone.children())[:-2])
         self.smooth = nn.Sequential(
             SPP(),

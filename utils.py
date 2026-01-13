@@ -122,11 +122,24 @@ class FocalLoss(nn.Module):
         other_loss = -other_id * (1 - targets)**4 * (inputs)**2 * t.log(1.0 - inputs + 1e-14)
         return center_loss + other_loss
  
+def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = True):
+    """
+    very similar to the smooth_l1_loss from pytorch, but with
+    the extra beta parameter
+    """
+    n = t.abs(input - target)
+    # cond = n < beta
+    cond = t.lt(n, beta)
+    loss = t.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
+    if size_average:
+        return loss.mean()
+    return loss.sum()
+
  
 def get_loss(pred_cls, pred_txty, pred_twth, label, num_classes):
     cls_loss_function = FocalLoss()
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
-    twth_loss_function = nn.SmoothL1Loss(reduction='none')
+    # twth_loss_function = nn.SmoothL1Loss(reduction='none')
  
     # 获取标记框gt    
     gt_cls = label[:, :, :num_classes].float()
@@ -141,8 +154,10 @@ def get_loss(pred_cls, pred_txty, pred_twth, label, num_classes):
     txty_loss = t.sum(t.sum(txty_loss_function(pred_txty, gt_txtytwth[:, :, :2]), 2) * gt_box_scale_weight) / batch_size
  
     # 物体尺度损失L_size
-    twth_loss = t.sum(t.sum(twth_loss_function(pred_twth, gt_txtytwth[:, :, 2:]), 2) * gt_box_scale_weight) / batch_size
- 
+    # twth_loss = t.sum(t.sum(twth_loss_function(pred_twth, gt_txtytwth[:, :, 2:]), 2) * gt_box_scale_weight) / batch_size
+    # 不支持onnx导出，更换算子
+    twth_loss = t.sum(t.sum(smooth_l1_loss(pred_twth, gt_txtytwth[:, :, 2:])) * gt_box_scale_weight) / batch_size
+    # print('size: ', smooth_l1_loss(pred_twth, gt_txtytwth[:, :, 2:]).shape)
     # 总损失
     total_loss = cls_loss + txty_loss + twth_loss
  

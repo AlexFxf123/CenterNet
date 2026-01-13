@@ -2,14 +2,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.onnx
-import model as mdl
+from model import CenterNet
  
-input = torch.rand(3, 224, 224)
-target = torch.rand(100, 6)
 num_classes = 80
 topk = 100
-model = mdl.CenterNet(num_classes=num_classes, topk=topk)
-output = model(input, target)
+model = CenterNet(num_classes=num_classes, topk=topk)
+model.eval()
 onnx_path = "CenterNet.onnx"
-torch.onnx.export(model, input, onnx_path)
 
+# 假设你的输入数据形状，生成对应的随机张量
+dummy_input = torch.rand(1, 3, 512, 512)
+dummy_target = torch.rand(1, 16384, 85)  # 或者 torch.zeros(target_shape) 等
+output = model(dummy_input, dummy_target)
+# 将多个输入以元组形式传递给 export 函数
+torch.onnx.export(
+    model, 
+    (dummy_input, dummy_target),        # 关键：以元组形式提供所有参数
+    onnx_path,
+    input_names=['input', 'target'],  # 为每个输入指定名称，便于识别
+    output_names=['output'],
+    # 可以继续添加其他参数，如 dynamic_axes
+)

@@ -1,2 +1,9 @@
 checkpoints/
 coco/
+test_img/
+/test_img
+test_result/
+/test_result
+*.onnx
+*.test.py
+

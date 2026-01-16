@@ -1,8 +1,21 @@
+# 保存临时训练的模型
 checkpoints/
+# 数据集路径
 coco/
+# 用于测试的图片
 test_img/
+test_nuscenes01_img/
+# 测试结果的图片
 test_results/
+test_nuscenes01_results/
+# 使用onnx推理的测试结果图片
+test_onnx_results/   
+# 保留之前训练的最新模型参数   
 pretrained_model/
+# 导出的onnx模型
 *.onnx
+# 测试代码，用于验证函数模块等
 *.test.py
+# python调试文件
+__pycache__
 

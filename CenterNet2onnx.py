@@ -7,6 +7,8 @@ from model import CenterNet
 num_classes = 80
 topk = 100
 model = CenterNet(num_classes=num_classes, topk=topk)
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(f"可训练参数量: {trainable_params}")
 model.eval()
 onnx_path = "CenterNet.onnx"
 
@@ -23,3 +25,5 @@ torch.onnx.export(
     output_names=['output'],
     # 可以继续添加其他参数，如 dynamic_axes
 )
+
+

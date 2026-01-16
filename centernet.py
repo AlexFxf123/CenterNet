@@ -35,7 +35,7 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 class_color = [(np.random.randint(255),np.random.randint(255),np.random.randint(255)) for _ in range(80)]
  
 class Config(object):
-    data_path = './coco/data/'                  # 数据集存放路径，完整数据
+    data_path = '/home/fxf/data/coco/'                  # 数据集存放路径，完整数据
     # data_path = './coco/minicoco/'            # 数据集存放路径，部分数据
     num_workers = 8                             # 多进程加载数据所用的进程数4，改为更多
     batch_size = 32
@@ -55,8 +55,10 @@ class Config(object):
     save_every = 1  # 每10个epoch保存一次模型,改成1个
  
     # 测试时所用参数
-    test_img_path = 'test_img/'  # 待测试图片保存路径
-    test_save_path = 'test_results/'
+    # test_img_path = 'test_img/'  # 待测试图片保存路径
+    # test_save_path = 'test_results/'
+    test_img_path = 'test_nuscenes01_img/'  # 待测试图片保存路径
+    test_save_path = 'test_nuscenes01_results/'
  
 
  
@@ -86,7 +88,7 @@ def train():
     loss_values = []
     for epoch in range(opt.max_epoch):
         loss_meter.reset()
-        print('test epoch: epoch = ', epoch)
+        print('test epoch: epoch = ', (epoch+1))
         for ii,(image,target) in tqdm.tqdm(enumerate(dataloader)):
             optimizer.zero_grad()
             image = image.to(device)
